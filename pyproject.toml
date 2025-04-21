@@ -1,0 +1,27 @@
+[project]
+name = "transformertest"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "diffrax>=0.7.0",
+    "einops>=0.8.1",
+    "equinox>=0.12.1",
+    "flax>=0.10.4",
+    "h5py>=3.13.0",
+    "helper-funcs>=0.1.35",
+    "imageio>=2.37.0",
+    "ipython>=9.0.2",
+    "jax>=0.5.3",
+    "lightning>=2.5.1",
+    "lineax>=0.0.8",
+    "matplotlib>=3.10.1",
+    "numpy>=2.2.4",
+    "optax>=0.2.4",
+    "ott-jax>=0.5.0",
+    "requests>=2.32.3",
+    "seaborn>=0.13.2",
+    "torch>=2.6.0",
+    "torchvision>=0.21.0",
+]
