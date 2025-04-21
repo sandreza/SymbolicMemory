@@ -54,7 +54,7 @@ model = Transformer(
     vocab_size=3,  # For tokens 0,1,2
     n_heads=9,
     d_model=72,    # n_heads * 8
-    n_layers=4,
+    n_layers=1,
     max_seq_len=10
 )
 
@@ -63,7 +63,7 @@ config = TrainingConfig(
     batch_size=32,
     block_size=10,
     learning_rate=1e-3,
-    num_steps=200,
+    num_steps=400,
     eval_interval=100,
     save_interval=1000,
     plot_attention=True,
