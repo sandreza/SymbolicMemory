@@ -14,7 +14,7 @@ from pathlib import Path
 import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from models.transformer import Transformer
+from models.simple_transformer import SimpleTransformer
 from training.trainer import Trainer, TrainingConfig
 
 
@@ -50,11 +50,11 @@ print(f"Dataset size: {len(data)} tokens")
 
 # Initialize model
 print("\nInitializing model...")
-model = Transformer(
+model = SimpleTransformer(
     vocab_size=3,  # For tokens 0,1,2
-    n_heads=9,
-    d_model=72,    # n_heads * 8
-    n_layers=1,
+    n_heads= 4,
+    d_model= 72,    # n_heads * 8
+    n_layers=2,
     max_seq_len=10
 )
 
@@ -67,7 +67,7 @@ config = TrainingConfig(
     eval_interval=100,
     save_interval=1000,
     plot_attention=True,
-    plot_interval=1000
+    plot_interval=100
 )
 
 # Initialize trainer

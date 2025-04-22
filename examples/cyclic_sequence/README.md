@@ -9,6 +9,32 @@ The dataset consists of a repeating sequence of tokens (e.g., 1,2,3,1,2,3... or 
 The model must learn to predict the next token in the sequence, which requires understanding
 both the current token and its position in the cycle.
 
+## Running the Example
+
+From the project root directory, run:
+```bash
+python examples/cyclic_sequence/train_cyclic.py
+```
+
+The script will:
+1. Generate the cyclic dataset
+2. Initialize and train the model
+3. Display training progress
+4. Show example predictions
+5. Visualize attention patterns
+
+## Model Parameters
+
+The default configuration uses:
+- Transformer model with 4 layers and 9 attention heads
+- Model dimension of 72 (n_heads * 8)
+- Sequence length of 10
+- Batch size of 32
+- Learning rate of 1e-3
+- 2000 training steps
+
+You can modify these parameters directly in `train_cyclic.py`.
+
 ## Model Architecture
 
 - Transformer with 4 layers

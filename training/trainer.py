@@ -23,7 +23,7 @@ class TrainingConfig:
     num_steps: int = 2000
     eval_interval: int = 100
     save_interval: int = 1000
-    plot_attention: bool = True
+    plot_attention: bool = False
     plot_interval: int = 100
 
 
