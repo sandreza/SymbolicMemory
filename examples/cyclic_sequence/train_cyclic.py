@@ -14,7 +14,7 @@ from pathlib import Path
 import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from models.simple_transformer import SimpleTransformer
+from models.transformer import SimpleTransformer, Transformer
 from training.trainer import Trainer, TrainingConfig
 
 
@@ -50,12 +50,12 @@ print(f"Dataset size: {len(data)} tokens")
 
 # Initialize model
 print("\nInitializing model...")
-model = SimpleTransformer(
-    vocab_size=3,  # For tokens 0,1,2
+model = Transformer(
+    token_dimension=3,  # For tokens 0,1,2
     n_heads= 4,
     d_model= 72,    # n_heads * 8
-    n_layers=1,
-    max_seq_len=10
+    layers=4,
+    max_tokens=10
 )
 
 # Configure training
@@ -63,10 +63,10 @@ config = TrainingConfig(
     batch_size=32,
     block_size=10,
     learning_rate=1e-3,
-    num_steps=1000,
+    num_steps=10000,
     eval_interval=100,
     save_interval=1000,
-    plot_attention=True,
+    plot_attention=False,
     plot_interval=100
 )
 
@@ -84,7 +84,6 @@ metrics = trainer.evaluate(data, num_samples=5)
 
 print("\nEvaluation Results:")
 print(f"Accuracy: {metrics['accuracy']:.4f}")
-print(f"Attention Entropy: {metrics['attention_entropy']:.4f}")
 
 # Show example predictions
 print("\nExample Predictions:")

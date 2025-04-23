@@ -2,6 +2,8 @@
 
 import jax
 import jax.numpy as jnp
+import functools as ft
+import equinox as eqx
 from typing import Tuple, Dict, Any
 
 
