@@ -3,6 +3,22 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Formats and Images
+*.png
+*.pdf
+*.html
+*.txt
+*.json
+*.yaml
+
+# Temporary Files
+*.tmp
+*.tmp.*
+*.swp
+*.swp.*
+
+
+
 # C extensions
 *.so
 *.DS_Store*

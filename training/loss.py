@@ -66,24 +66,22 @@ def batch_loss_fn(
     return total_loss, metrics
 
 
-def attention_entropy(attention_weights: jax.Array) -> jax.Array:
-    """Compute entropy of attention weights.
-    
-    Args:
-        attention_weights: Attention weights of shape (n_heads, seq_len, seq_len)
-        
-    Returns:
-        Average entropy across heads and positions
-    """
-    # Compute entropy for each head and position
-    entropy = -jnp.sum(
-        attention_weights * jnp.log(attention_weights + 1e-10),
-        axis=-1
-    )
-    
-    # Normalize by log(sequence_length)
-    seq_len = attention_weights.shape[-1]
-    entropy = entropy / jnp.log(seq_len)
-    
-    # Average across heads and positions
-    return jnp.mean(entropy) 
+@eqx.filter_jit      
+def sae_loss_fn(model, l1_penalty, input):
+    output = model(input)
+    loss = jnp.mean((output - input) ** 2) + l1_penalty * jnp.mean(jnp.abs(model.hx(input)))
+    return loss       
+
+@eqx.filter_jit     
+def sae_batch_loss_function(model, l1_penalty, input_data):
+    loss_function = ft.partial(sae_loss_fn, model, l1_penalty)
+    loss_function = jax.vmap(loss_function)
+    return jnp.mean(loss_function(input_data))
+
+@eqx.filter_jit     
+def sae_make_step(model, input_data, l1_penalty, opt_state, opt_update):
+    loss_function = eqx.filter_value_and_grad(sae_batch_loss_function)
+    loss, grads = loss_function(model, l1_penalty, input_data)
+    updates, opt_state = opt_update(grads, opt_state, model)
+    model = eqx.apply_updates(model, updates)
+    return loss, model, opt_state
