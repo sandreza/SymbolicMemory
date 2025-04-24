@@ -11,8 +11,9 @@ import equinox as eqx
 import optax
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import numpy as np
 
-from .loss import batch_loss_fn
+from .loss import batch_loss_function
 from .utils import save as save_model, load as load_model
 
 
@@ -22,6 +23,7 @@ class TrainingConfig:
     batch_size: int = 32
     block_size: int = 10
     learning_rate: float = 1e-3
+    weight_decay: float = 0.01
     num_steps: int = 2000
     eval_interval: int = 100
     save_interval: int = 1000
@@ -77,10 +79,9 @@ class Trainer:
         
         # Initialize optimizer
         self.optimizer = optax.chain(
-            optax.clip(1.0),
             optax.adamw(
                 learning_rate=config.learning_rate,
-                weight_decay=0.01
+                weight_decay=config.weight_decay
             )
         )
         self.opt_state = self.optimizer.init(eqx.filter(self.model, eqx.is_array))
@@ -167,7 +168,7 @@ class Trainer:
             key,
             (self.config.batch_size,),
             0,
-            len(data) - self.config.block_size
+            len(data) - self.config.block_size - 2
         )
         
         # Create input and output sequences
@@ -197,8 +198,7 @@ class Trainer:
         """
         # Define loss function wrapper for gradient computation
         def loss_fn(model):
-            logits = jax.vmap(model)(input_data)
-            loss, metrics = batch_loss_fn(logits, output_data)
+            loss = batch_loss_function(model, input_data, output_data)
             return loss
         
         # Compute loss and gradients
@@ -296,26 +296,41 @@ class Trainer:
             save_path: Optional path to save the plot
         """
         # Get attention weights
-        attention_weights = self.model.attention(input_seq, layer = layer_idx)
+        attention_weights = self.model.attention(input_seq, layer=layer_idx)
         n_heads = attention_weights.shape[0]
         
-        # Create figure
-        sqrt_n = int(jnp.ceil(jnp.sqrt(n_heads)))
-        fig, axes = plt.subplots(sqrt_n, sqrt_n, figsize=(sqrt_n, sqrt_n))
-        
-        # Plot each attention head
-        for i in range(n_heads):
-            row = i // sqrt_n
-            col = i % sqrt_n
-            axes[row, col].imshow(attention_weights[i])
-            axes[row, col].set_title(f"Head {i}")
-            axes[row, col].axis("off")
-        
-        # Remove empty subplots
-        for i in range(n_heads, sqrt_n * sqrt_n):
-            row = i // sqrt_n
-            col = i % sqrt_n
-            fig.delaxes(axes[row, col])
+        if n_heads == 1:
+            # Single attention head case
+            plt.figure(figsize=(6, 6))
+            plt.imshow(attention_weights[0])
+            plt.title("Attention Weights")
+            plt.axis("off")
+        else:
+            # Multiple attention heads case
+            sqrt_n = int(jnp.ceil(jnp.sqrt(n_heads)))
+            fig, axes = plt.subplots(sqrt_n, sqrt_n, figsize=(2*sqrt_n, 2*sqrt_n))
+            
+            # Make axes indexable for any number of heads
+            if sqrt_n == 1:
+                axes = np.array([[axes]])
+            elif not hasattr(axes[0], '__len__'):
+                axes = np.array([axes])
+            
+            # Plot each attention head
+            for i in range(n_heads):
+                row = i // sqrt_n
+                col = i % sqrt_n
+                ax = axes[row, col]
+                ax.imshow(attention_weights[i])
+                ax.set_title(f"Head {i}")
+                ax.axis("off")
+            
+            # Remove empty subplots
+            if n_heads < sqrt_n * sqrt_n:
+                for i in range(n_heads, sqrt_n * sqrt_n):
+                    row = i // sqrt_n
+                    col = i % sqrt_n
+                    fig.delaxes(axes[row, col])
         
         plt.tight_layout()
         

@@ -50,24 +50,26 @@ print(f"Dataset size: {len(data)} tokens")
 
 # Initialize model
 print("\nInitializing model...")
-model = Transformer(
+model = SimpleTransformer(
     token_dimension=3,  # For tokens 0,1,2
-    n_heads= 4,
-    d_model= 72,    # n_heads * 8
-    layers=4,
-    max_tokens=10
+    n_heads= 1,
+    d_model= 1 * 8,    # n_heads * 16
+    layers=1,
+    max_tokens=100
 )
 
 # Configure training
 config = TrainingConfig(
-    batch_size=32,
+    batch_size=128,
     block_size=10,
-    learning_rate=1e-3,
-    num_steps=10000,
+    learning_rate=1e-2,
+    num_steps=1001,
     eval_interval=100,
-    save_interval=1000,
-    plot_attention=False,
-    plot_interval=100
+    save_interval=100,
+    plot_attention=True,
+    plot_interval=100,
+    weight_decay=0.00,
+    save_path= "cyclic_model/model.mo"
 )
 
 # Initialize trainer
@@ -88,7 +90,7 @@ print(f"Accuracy: {metrics['accuracy']:.4f}")
 # Show example predictions
 print("\nExample Predictions:")
 for i in range(5):
-    print(f"Input:  {metrics['targets'][i]}")
+    print(f"Target: {metrics['targets'][i]}")
     print(f"Output: {metrics['predictions'][i]}")
     print()
 
