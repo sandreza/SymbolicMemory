@@ -92,7 +92,6 @@ hallucination_4 = generate_predictions(
     max_new_tokens= 100,
     block_size= 10,
     key = keys[3],
-    batch_size = 1,
 )
 print("Generated sequence:", hallucination_4.flatten())
 
