@@ -16,28 +16,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from models.transformer import SimpleTransformer, Transformer
 from training.trainer import Trainer, TrainingConfig
-
-
-def generate_cyclic_data(
-    token_dimension: int = 3,
-    holding_time: int = 6,
-    data_multiplier: int = 100000
-) -> jax.Array:
-    """Generate a cyclic sequence dataset.
-    
-    Args:
-        token_dimension: Number of unique tokens in the sequence
-        holding_time: Number of times each token is repeated
-        data_multiplier: Number of times to repeat the base sequence
-        
-    Returns:
-        Array containing the cyclic sequence
-    """
-    # Create base sequence (e.g., 1,2,3,1,2,3... or 1,1,2,2,3,3,1,1,2,2,3,3)
-    base_sequence = jnp.repeat(jnp.arange(token_dimension), holding_time)
-    
-    # Tile the sequence to create a large dataset
-    return jnp.tile(base_sequence, data_multiplier)
+from data import generate_cyclic_data
 
 
 # Set random seed for reproducibility
@@ -52,25 +31,25 @@ print(f"Dataset size: {len(data)} tokens")
 print("\nInitializing model...")
 model = SimpleTransformer(
     token_dimension=3,  # For tokens 0,1,2
-    n_heads= 16,
-    d_model= 16 * 8,    # n_heads * 16
+    n_heads= 9,
+    d_model= 9 * 8,    # n_heads * 16
     layers=1,
     max_tokens=100
 )
 
 # Configure training
 config = TrainingConfig(
-    batch_size=128 * 4,
+    batch_size=128,
     block_size=10,
-    learning_rate=1e-2,
-    num_steps=201,
+    learning_rate=1e-4,
+    weight_decay=1e-3,
+    num_steps=10001,
     eval_interval=100,
     save_interval=100,
     plot_attention=False,
     plot_interval=100,
-    weight_decay=0.000,
-    test_interval=10,
-    save_path= "cyclic_model/model.mo"
+    test_interval=100,
+    save_path= "cyclic_model/st_model.mo"
 )
 
 # Initialize trainer
