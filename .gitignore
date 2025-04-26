@@ -12,6 +12,7 @@ __pycache__/
 *.yaml
 
 # Temporary Files
+*tmp*
 *.tmp
 *.tmp.*
 *.swp

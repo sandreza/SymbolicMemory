@@ -45,30 +45,31 @@ key = jr.key(0)
 
 # Generate dataset
 print("Generating dataset...")
-data = generate_cyclic_data()
+data = generate_cyclic_data(token_dimension = 3, holding_time = 6, data_multiplier = 100000)
 print(f"Dataset size: {len(data)} tokens")
 
 # Initialize model
 print("\nInitializing model...")
 model = SimpleTransformer(
     token_dimension=3,  # For tokens 0,1,2
-    n_heads= 1,
-    d_model= 1 * 8,    # n_heads * 16
+    n_heads= 16,
+    d_model= 16 * 8,    # n_heads * 16
     layers=1,
     max_tokens=100
 )
 
 # Configure training
 config = TrainingConfig(
-    batch_size=128,
+    batch_size=128 * 4,
     block_size=10,
     learning_rate=1e-2,
-    num_steps=1001,
+    num_steps=201,
     eval_interval=100,
     save_interval=100,
-    plot_attention=True,
+    plot_attention=False,
     plot_interval=100,
-    weight_decay=0.00,
+    weight_decay=0.000,
+    test_interval=10,
     save_path= "cyclic_model/model.mo"
 )
 
@@ -78,27 +79,13 @@ trainer = Trainer(model, config, key)
 
 # Train model
 print("\nStarting training...")
-trainer.train(data)
+trainer.train_test(data, data[0:54])
 
 # Evaluate model
 print("\nEvaluating model...")
-metrics = trainer.evaluate(data, num_samples=5)
+metrics = trainer.evaluate(data, num_batches=5)
 
 print("\nEvaluation Results:")
-print(f"Accuracy: {metrics['accuracy']:.4f}")
+print(f"Accuracy: {metrics:.4f}")
 
-# Show example predictions
-print("\nExample Predictions:")
-for i in range(5):
-    print(f"Target: {metrics['targets'][i]}")
-    print(f"Output: {metrics['predictions'][i]}")
-    print()
-
-# Plot training loss
-plt.figure(figsize=(10, 5))
-plt.plot(trainer.losses)
-plt.xlabel("Training Step")
-plt.ylabel("Loss")
-plt.title("Training Loss")
-plt.grid(True)
-plt.show()
+trainer.plot_losses()

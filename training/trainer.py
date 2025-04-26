@@ -1,6 +1,6 @@
 """Training infrastructure for transformer models."""
 
-from typing import Tuple, Optional, Dict, Any, Type
+from typing import Tuple, Optional, Dict, Any, Type, List
 from dataclasses import dataclass
 import os
 
@@ -32,6 +32,7 @@ class TrainingConfig:
     plot_attention: bool = False
     plot_interval: int = 100
     load_path: Optional[str] = None
+    test_interval: int = 100  # How often to evaluate on test set
 
 
 class Trainer:
@@ -87,7 +88,9 @@ class Trainer:
         self.opt_state = self.optimizer.init(eqx.filter(self.model, eqx.is_array))
         
         # Initialize metrics
-        self.losses = []
+        self.train_losses: List[float] = []
+        self.test_losses: List[float] = []
+        self.test_steps: List[int] = []  # Store steps where test loss was computed
         
         # Setup save directory if needed
         if self.config.save_path:
@@ -245,42 +248,60 @@ class Trainer:
         save_model(save_path, hyperparams, self.model)
         print(f"Saved model checkpoint to {save_path}")
 
-    def train(
+    def train_test(
         self,
-        data: jax.Array,
+        train_data: jax.Array,
+        test_data: jax.Array,
         num_steps: Optional[int] = None
     ) -> None:
-        """Train the model.
+        """Train the model with periodic evaluation on test data.
         
         Args:
-            data: Training dataset
+            train_data: Training dataset
+            test_data: Test dataset
             num_steps: Optional number of steps to train for (overrides config)
         """
         num_steps = num_steps or self.config.num_steps
         
         for step in tqdm(range(num_steps)):
-            # Get batch
-            self.key, subkey = jr.split(self.key)
-            input_data, output_data = self.get_batch(data, subkey)
-            
             # Training step
+            self.key, subkey = jr.split(self.key)
+            input_data, output_data = self.get_batch(train_data, subkey)
             loss, self.model, self.opt_state = self.make_step(
                 self.model, input_data, output_data, self.opt_state
             )
+            self.train_losses.append(loss)
             
-            # Store metrics
-            self.losses.append(loss)
-            
-            # Evaluation and visualization
-            if step % self.config.eval_interval == 0:
-                print(f"Step {step}, Loss: {loss:.4f}")
+            # Evaluation on test set
+            if step % self.config.test_interval == 0:
+                test_loss = self.evaluate(test_data)
+                self.test_losses.append(test_loss)
+                self.test_steps.append(step)
+                print(f"Step {step}, Train Loss: {loss:.4f}, Test Loss: {test_loss:.4f}")
                 
                 if self.config.plot_attention and step % self.config.plot_interval == 0:
                     self.plot_attention(input_data[0])
             
+            # Regular evaluation and saving
+            elif step % self.config.eval_interval == 0:
+                print(f"Step {step}, Train Loss: {loss:.4f}")
+            
             # Save checkpoint if configured
             if self.config.save_path and step % self.config.save_interval == 0:
                 self.save_checkpoint(step)
+
+    def plot_losses(self) -> None:
+        """Plot training and test losses."""
+        plt.figure(figsize=(10, 6))
+        plt.plot(range(len(self.train_losses)), self.train_losses, label='Train Loss')
+        if self.test_losses:
+            plt.plot(self.test_steps, self.test_losses, label='Test Loss')
+        plt.xlabel('Steps')
+        plt.ylabel('Loss')
+        plt.title('Training and Test Losses')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
 
     def plot_attention(
         self,
@@ -341,39 +362,40 @@ class Trainer:
     def evaluate(
         self,
         data: jax.Array,
-        num_samples: int = 5
-    ) -> Dict[str, Any]:
-        """Evaluate the model on the dataset.
+        num_batches: int = 5
+    ) -> float:
+        """Evaluate model on multiple batches of data.
         
         Args:
             data: Evaluation dataset
-            num_samples: Number of samples to evaluate
+            num_batches: Number of batches to evaluate on
             
         Returns:
-            Dictionary containing evaluation metrics
+            Average loss across batches
         """
-        self.key, subkey = jr.split(self.key)
-        input_data, output_data = self.get_batch(data, subkey)
+        losses = []
+        for _ in range(num_batches):
+            self.key, subkey = jr.split(self.key)
+            input_data, output_data = self.get_batch(data, subkey)
+            loss = self.compute_loss(self.model, input_data, output_data)
+            losses.append(loss)
+        return jnp.mean(jnp.array(losses))
+
+    @eqx.filter_jit
+    def compute_loss(
+        self,
+        model: eqx.Module,
+        input_data: jax.Array,
+        output_data: jax.Array
+    ) -> float:
+        """Compute loss for a batch of data.
         
-        # Get model predictions for the first num_samples sequences
-        input_subset = input_data[:num_samples]
-        target_subset = output_data[:num_samples]
-        
-        # Get logits for each sequence
-        logits = jax.vmap(self.model)(input_subset)  # shape: (num_samples, seq_len, vocab_size)
-        
-        # Get predictions for each position in each sequence
-        predictions = jnp.argmax(logits, axis=-1)  # shape: (num_samples, seq_len)
-        
-        # Compute accuracy
-        accuracy = jnp.mean(predictions == target_subset)
-        
-        # Compute attention entropy for first sequence
-        attention_weights = self.model.attention(input_subset[0], layer=0)
-        
-        return {
-            "accuracy": accuracy,
-            "predictions": predictions,
-            "targets": target_subset,
-            "logits": logits
-        } 
+        Args:
+            model: Model to evaluate
+            input_data: Input tokens of shape (batch_size, block_size)
+            output_data: Target tokens of shape (batch_size, block_size)
+            
+        Returns:
+            Loss value for the batch
+        """
+        return batch_loss_function(model, input_data, output_data) 
