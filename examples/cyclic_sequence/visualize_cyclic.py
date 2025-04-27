@@ -44,28 +44,3 @@ for layer in range(n_layers):
     plt.close('all')
 
 
-istart = 0
-block = 10
-x = jnp.array(data[istart:istart+block])
-p = jax.vmap(jax.nn.softmax)(model(x))
-print(p)
-print(x)
-
-istart = 5
-block = 10
-x = jnp.array(data[istart:istart+block])
-p = jax.vmap(jax.nn.softmax)(model(x))
-print(p)
-print(x)
-
-predictions = generate_predictions(
-    model,
-    initial_seq = jnp.array(data[0]),
-    max_new_tokens= 100,
-    block_size= 10,
-    key = jr.key(0),
-    batch_size = 1,
-)
-
-
-

@@ -36,11 +36,25 @@ def generate_predictions(
         batch_size: Number of sequences to generate in parallel
     
     Returns:
-        Array of shape (batch_size, initial_seq_len + max_new_tokens) containing
-        the original sequence followed by generated tokens
+        Array of shape (batch_size, max_seq_len + max_new_tokens) containing
+        the original sequence (padded if necessary) followed by generated tokens
     """
     # Convert initial sequence to jax array if needed
-    initial_seq = jnp.asarray(initial_seq)
+    if isinstance(initial_seq, list):
+        # Handle list of sequences by stacking them
+        max_len = max(len(seq) for seq in initial_seq)
+        padded_seqs = []
+        for seq in initial_seq:
+            seq = jnp.asarray(seq)
+            if len(seq.shape) == 0:
+                seq = seq.reshape(1)
+            if len(seq) < max_len:
+                padding = jnp.full((max_len - len(seq),), seq[-1])
+                seq = jnp.concatenate([seq, padding])
+            padded_seqs.append(seq)
+        initial_seq = jnp.stack(padded_seqs)
+    else:
+        initial_seq = jnp.asarray(initial_seq)
     
     # Handle input shapes
     if initial_seq.ndim == 0:
@@ -49,10 +63,28 @@ def generate_predictions(
         initial_seq = initial_seq.reshape(1, -1)
     elif initial_seq.ndim > 2:
         raise ValueError(f"Initial sequence must be 1D or 2D, got shape {initial_seq.shape}")
-        
-    # Now we know initial_seq is 2D with shape (batch, seq_len)
-    if batch_size > 1:
+    
+    # If we have multiple sequences of different lengths, pad to the longest
+    if initial_seq.shape[0] > 1:
+        max_seq_len = initial_seq.shape[1]
+        # Create a mask for valid positions
+        seq_lens = jnp.sum(initial_seq != initial_seq[:, -1:], axis=1) + 1
+        # Pad shorter sequences with their last token
+        for i in range(initial_seq.shape[0]):
+            if seq_lens[i] < max_seq_len:
+                padding = jnp.full((max_seq_len - seq_lens[i],), initial_seq[i, seq_lens[i]-1])
+                initial_seq = initial_seq.at[i, seq_lens[i]:].set(padding)
+    
+    # Handle batch size
+    if batch_size > 1 and initial_seq.shape[0] == 1:
         initial_seq = jnp.repeat(initial_seq, batch_size, axis=0)
+    elif batch_size > initial_seq.shape[0]:
+        # If we want more batches than provided sequences, repeat the existing ones
+        repeats = batch_size // initial_seq.shape[0] + 1
+        initial_seq = jnp.repeat(initial_seq, repeats, axis=0)[:batch_size]
+    elif batch_size < initial_seq.shape[0]:
+        # If we want fewer batches, take the first batch_size sequences
+        initial_seq = initial_seq[:batch_size]
     
     # Setup for batched generation
     index_seq = initial_seq

@@ -156,3 +156,25 @@ def test_input_validation(small_model):
             block_size=8,
             key=jr.PRNGKey(0)
         ) 
+
+
+def test_batched_same_lengths(small_model):
+    """Test generating from batched sequences of same lengths."""
+    # Create two sequences of same lengths
+    seq1 = jnp.array([1, 2, 3, 1])  # Length 4
+    seq2 = jnp.array([2, 1, 3, 1])        # Length 2
+    initial_seqs = jnp.array([seq1, seq2])
+    
+    output = generate_predictions(
+        model=small_model,
+        initial_seq=initial_seqs,
+        max_new_tokens=3,
+        block_size=8,
+        key=jr.PRNGKey(0),
+        batch_size=2
+    )
+    
+    # Check output shape (should be batch_size, max_input_len + new_tokens)
+    assert output.shape == (2, 7)  # max_input_len=4, new_tokens=3
+
+
