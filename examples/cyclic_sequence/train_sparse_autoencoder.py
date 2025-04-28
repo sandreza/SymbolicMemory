@@ -73,7 +73,7 @@ jnp.sum(sae.hx(rv) > 1.0)
 
 def sae_intervention(sae, t):
     f = jax.vmap(sae.hx)(t)
-    g = f.at[-1, 26].multiply(10.0)
+    g = f.at[-1, 105].multiply(10.0)
     s_tilde = jnp.einsum("te, ed -> td", g, sae.W_UE)
     s = jax.vmap(sae)(t) 
     t = s_tilde - s + t
@@ -99,7 +99,7 @@ for j in jnp.arange(seq_length):
         print(j)
     key, subkey = jr.split(key)
     a = jnp.arange(token_dimension)
-    y = model(x) # model.intervention(x, layer = layer_level, intervention =  intervention) # 
+    y = model.intervention(x, layer = layer_level, intervention =  intervention) # 
     p = jax.nn.softmax(y)[-1]
     x_new = jnp.array([jax.random.choice(key, a, p=p)])
     xs = xs.at[j].set(x_new[0])
