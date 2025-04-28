@@ -33,7 +33,7 @@ def get_batch(
 optimizer = optax.adamw(learning_rate=1e-3, weight_decay = 1e-2) # ,  weight_decay = 1e-2
 opt_state = optimizer.init(eqx.filter(sae, eqx.is_inexact_array))
 
-layer_level = 1
+layer_level = 0
 model = load("cyclic_model/st_model.mo", SimpleTransformer)
 data = generate_cyclic_data(token_dimension = 3, holding_time = 6, data_multiplier = 100000)
 t0 = model.residual(data[0:10], layer = 0)
@@ -62,32 +62,34 @@ for step in range(100 * 10):
         print(sae_loss_fn(sae, 0.0, rv))
         print('-------')
 
-i = 2
-x= data[i:block_size+i]
+candidate_group = []
+for i in jnp.arange(18):
+    x= data[i:block_size+i]
+    t = model.residual(x, layer = layer_level)
+    rv = t[-1]
+    candidate_indices = jnp.flip(jnp.argsort(sae.hx(rv)))
+    sae(rv) - rv
+    jnp.sum(sae.hx(rv) > 1.0)
+    candidate_group.append(candidate_indices)
 
-t = model.residual(x, layer = layer_level)
-rv = t[-1]
-jnp.argsort(sae.hx(rv))
-sae(rv) - rv
-jnp.sum(sae.hx(rv) > 1.0)
+candidate_indices = candidate_group[0][0:20]
+for i in jnp.arange(18):
+    candidate_indices = jnp.union1d(candidate_indices, candidate_group[i][0:20]) # intersect1d
 
 def sae_intervention(sae, t):
     f = jax.vmap(sae.hx)(t)
-    g = f.at[-1, 105].multiply(10.0)
+    g = f.at[-1, candidate_indices[0]].multiply(10.0)
     s_tilde = jnp.einsum("te, ed -> td", g, sae.W_UE)
     s = jax.vmap(sae)(t) 
     t = s_tilde - s + t
     return t
-
 intervention = ft.partial(sae_intervention, sae)
-
 for i in jnp.arange(block_size*2):
     x = data[i:block_size+i]
     o = model.intervention(x, layer = layer_level, intervention =  intervention)
     # print(o[-1])
     print(jnp.argmax(o[-1]))
     print(o[-1] - model(x)[-1] )
-
 i = 0
 token_dimension = 3
 x = data[i:block_size+i]
@@ -95,8 +97,6 @@ key, subkey = jr.split(jr.key(0))
 seq_length = 100
 xs = jnp.arange(seq_length)
 for j in jnp.arange(seq_length):
-    if j%10==0:
-        print(j)
     key, subkey = jr.split(key)
     a = jnp.arange(token_dimension)
     y = model.intervention(x, layer = layer_level, intervention =  intervention) # 
@@ -104,3 +104,31 @@ for j in jnp.arange(seq_length):
     x_new = jnp.array([jax.random.choice(key, a, p=p)])
     xs = xs.at[j].set(x_new[0])
     x = jnp.concatenate([x, x_new])[-block_size:]
+print(xs)
+
+for candidate_index in candidate_indices:
+    def sae_intervention(sae, t):
+        f = jax.vmap(sae.hx)(t)
+        g = f.at[-1, candidate_index].multiply(20.0)
+        s_tilde = jnp.einsum("te, ed -> td", g, sae.W_UE)
+        s = jax.vmap(sae)(t) 
+        t = s_tilde - s + t
+        return t
+    print('-------')
+    print(candidate_index)
+    intervention = ft.partial(sae_intervention, sae)
+    i = 0
+    token_dimension = 3
+    x = data[i:block_size+i]
+    key, subkey = jr.split(jr.key(0))
+    seq_length = 200
+    xs = jnp.arange(seq_length)
+    for j in jnp.arange(seq_length):
+        key, subkey = jr.split(key)
+        a = jnp.arange(token_dimension)
+        y = model.intervention(x, layer = layer_level, intervention =  intervention) # 
+        p = jax.nn.softmax(y)[-1]
+        x_new = jnp.array([jax.random.choice(key, a, p=p)])
+        xs = xs.at[j].set(x_new[0])
+        x = jnp.concatenate([x, x_new])[-block_size:]
+    print(xs)
