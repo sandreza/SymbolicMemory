@@ -12,10 +12,13 @@ from data import generate_cyclic_data
 # Set random key
 key = jr.key(0)
 
+# Layer level to intervene on
+layer_level = 0
+
 # Load trained models
 print("Loading models...")
 transformer = load("cyclic_model/st_model.mo", SimpleTransformer)
-sae = load("cyclic_model/sae.mo", AutoEncoder)
+sae = load("cyclic_model/sae_layer_" + str(layer_level) + ".mo", AutoEncoder)
 
 # Generate test data
 print("Generating test data...")
@@ -29,7 +32,6 @@ data = generate_cyclic_data(
 
 # Test parameters
 block_size = 10
-layer_level = 0
 
 # Get candidate indices for intervention
 print("\nFinding candidate indices for intervention...")

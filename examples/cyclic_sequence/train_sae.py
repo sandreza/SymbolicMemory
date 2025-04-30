@@ -39,44 +39,46 @@ sample_activations = model.residual(sample_seq, layer=0)
 d_model = sample_activations.shape[-1]  # Get the dimension of the activations
 
 # Configure SAE training
-config = SAETrainingConfig(
-    batch_size=32,
-    block_size=10,
-    learning_rate=1e-3,
-    weight_decay=0.01,
-    num_steps=1000,
-    eval_interval=100,
-    save_interval=500,
-    save_path="cyclic_model/sae.mo",
-    plot_reconstruction=False,
-    plot_interval=200,
-    e_factor=2,
-    layer_level=0  # Train on first layer
-)
+numsteps = [1000, 5000]
+for layer_level in range(2):
+    config = SAETrainingConfig(
+        batch_size=32,
+        block_size=10,
+        learning_rate=1e-3,
+        weight_decay=0.01,
+        num_steps=numsteps[layer_level],
+        eval_interval=100,
+        save_interval=500,
+        save_path="cyclic_model/sae_layer_" + str(layer_level) + ".mo",
+        plot_reconstruction=False,
+        plot_interval=200,
+        e_factor=2,
+        layer_level=layer_level  # Train on first layer
+    )
 
-# Initialize trainer
-print("Initializing SAE trainer...")
-trainer = SAETrainer(
-    transformer_model=model,
-    config=config,
-    key=key
-)
+    # Initialize trainer
+    print("Initializing SAE trainer...")
+    trainer = SAETrainer(
+        transformer_model=model,
+        config=config,
+        key=key
+    )
 
-# Train the SAE
-print("Starting training...")
-trainer.train_test(train_data, test_data)
+    # Train the SAE
+    print("Starting training...")
+    trainer.train_test(train_data, test_data)
 
-# Plot final results
-print("Plotting results...")
-trainer.plot_losses()
+    # Plot final results
+    print("Plotting results...")
+    trainer.plot_losses()
 
-# Test reconstruction on a sample sequence
-print("\nTesting reconstruction on a sample sequence:")
-sample_activations = model.residual(sample_seq, layer=0)
-trainer.plot_reconstruction(sample_activations)
+    # Test reconstruction on a sample sequence
+    print("\nTesting reconstruction on a sample sequence:")
+    sample_activations = model.residual(sample_seq, layer=0)
+    trainer.plot_reconstruction(sample_activations)
 
-# Save final model
-print("\nSaving final model...")
-trainer.save_checkpoint(trainer.config.num_steps)
+    # Save final model
+    print("\nSaving final model...")
+    trainer.save_checkpoint(trainer.config.num_steps)
 
-print("\nTraining complete!")
+    print("\nTraining complete!")
