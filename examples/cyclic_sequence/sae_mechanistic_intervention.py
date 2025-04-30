@@ -42,9 +42,10 @@ for i in range(18):
     candidate_group.append(candidate_indices)
 
 # Combine candidate indices from different sequences
-candidate_indices = candidate_group[0][:20]
+base_number = 20
+candidate_indices = candidate_group[0][:base_number]
 for i in range(1, 18):
-    candidate_indices = jnp.union1d(candidate_indices, candidate_group[i][:20])
+    candidate_indices = jnp.union1d(candidate_indices, candidate_group[i][:base_number])
 
 print(f"Found {len(candidate_indices)} candidate indices for intervention")
 
@@ -59,16 +60,18 @@ def sae_intervention(sae, t):
 
 intervention = ft.partial(sae_intervention, sae)
 
+
 # Test intervention on different sequences
 print("\nTesting intervention on different sequences:")
-
 # Test 1: Normal sequence
 print("\nTest 1: Normal sequence")
-x = data[0:block_size]
-o = transformer.intervention(x, layer=layer_level, intervention=intervention)
-print("Original prediction:", jnp.argmax(transformer(x)[-1]))
-print("Intervened prediction:", jnp.argmax(o[-1]))
-print("Difference:", o[-1] - transformer(x)[-1])
+for i in range(18):
+    x = data[i:block_size+i]
+    o = transformer.intervention(x, layer=layer_level, intervention=intervention)
+    print("Sequence: ", x)
+    print("Original prediction:", jnp.argmax(transformer(x)[-1]))
+    print("Intervened prediction:", jnp.argmax(o[-1]))
+    print("Difference:", o[-1] - transformer(x)[-1])
 
 # Test 2: Forbidden sequence [1, 0]
 print("\nTest 2: Forbidden sequence [1, 0]")
@@ -90,7 +93,7 @@ print("Difference:", o[-1] - transformer(x)[-1])
 
 # Test 4: Generate sequence with intervention
 print("\nTest 4: Generate sequence with intervention")
-x = data[0:block_size]
+x = data[0+14:block_size+14]
 seq_length = 100
 xs = jnp.arange(seq_length)
 
@@ -110,7 +113,7 @@ print("\nTest 5: Testing each candidate index individually")
 for candidate_index in candidate_indices:
     def sae_intervention(sae, t):
         f = jax.vmap(sae.hx)(t)
-        g = f.at[-1, candidate_index].multiply(20.0)
+        g = f.at[-1, candidate_index].multiply(5.0)
         s_tilde = jnp.einsum("te, ed -> td", g, sae.W_UE)
         s = jax.vmap(sae)(t)
         t = s_tilde - s + t
