@@ -53,7 +53,21 @@ def sae_loss_fn(model, l1_penalty, input):
     return loss       
 
 @eqx.filter_jit     
-def sae_batch_loss_function(model, l1_penalty, input_data):
+def sae_batch_loss_function(model, input_data, l1_penalty):
+    """Compute loss for a batch of data.
+    
+    Args:
+        model: The autoencoder model
+        input_data: Input data of shape (batch_size, d_model)
+        l1_penalty: L1 regularization coefficient
+        
+    Returns:
+        Mean loss over the batch
+    """
+    # Ensure input_data has at least 2 dimensions
+    if len(input_data.shape) == 1:
+        input_data = input_data.reshape(1, -1)
+    
     loss_function = ft.partial(sae_loss_fn, model, l1_penalty)
     loss_function = jax.vmap(loss_function)
     return jnp.mean(loss_function(input_data))
@@ -61,7 +75,7 @@ def sae_batch_loss_function(model, l1_penalty, input_data):
 @eqx.filter_jit     
 def sae_make_step(model, input_data, l1_penalty, opt_state, opt_update):
     loss_function = eqx.filter_value_and_grad(sae_batch_loss_function)
-    loss, grads = loss_function(model, l1_penalty, input_data)
+    loss, grads = loss_function(model, input_data, l1_penalty)
     updates, opt_state = opt_update(grads, opt_state, model)
     model = eqx.apply_updates(model, updates)
     return loss, model, opt_state

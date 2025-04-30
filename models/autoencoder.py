@@ -20,12 +20,12 @@ class SimpleAutoEncoder(eqx.Module):
        keys = jr.split(key, 2)
        self.W_E  = jr.normal(keys[1], shape = (e_model, d_model)) / jnp.sqrt(d_model)
     def __call__(self, x): 
-        hx = jnp.einsum("d, ed -> e", x, self.W_E) 
+        hx = jnp.einsum("...d, ed -> ...e", x, self.W_E) 
         hx = jax.nn.relu(hx)
-        h = jnp.einsum("e, ed -> d", hx, self.W_E)
+        h = jnp.einsum("...e, ed -> ...d", hx, self.W_E)
         return h
     def hx(self, x): 
-        hx = jnp.einsum("d, ed -> e", x, self.W_E) 
+        hx = jnp.einsum("...d, ed -> ...e", x, self.W_E) 
         hx = jax.nn.relu(hx)
         return hx
 
@@ -39,11 +39,11 @@ class AutoEncoder(eqx.Module):
        self.W_UE  = jr.normal(keys[2], shape = (e_model, d_model)) / jnp.sqrt(e_model)
        self.b_E = jr.normal(keys[3], shape = (e_model)) / jnp.sqrt(e_model)
     def __call__(self, x): 
-        hx = jnp.einsum("d, ed -> e", x, self.W_E) + self.b_E
+        hx = jnp.einsum("...d, ed -> ...e", x, self.W_E) + self.b_E
         hx = jax.nn.relu(hx)
-        h = jnp.einsum("e, ed -> d", hx, self.W_UE)
+        h = jnp.einsum("...e, ed -> ...d", hx, self.W_UE)
         return h
     def hx(self, x): 
-        hx = jnp.einsum("d, ed -> e", x, self.W_E)  + self.b_E
+        hx = jnp.einsum("...d, ed -> ...e", x, self.W_E)  + self.b_E
         hx = jax.nn.relu(hx)
         return hx
