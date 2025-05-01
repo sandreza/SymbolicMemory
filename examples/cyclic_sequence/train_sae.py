@@ -39,7 +39,7 @@ sample_activations = model.residual(sample_seq, layer=0)
 d_model = sample_activations.shape[-1]  # Get the dimension of the activations
 
 # Configure SAE training
-numsteps = [1000, 5000]
+numsteps = [10000, 10000]
 for layer_level in range(2):
     config = SAETrainingConfig(
         batch_size=32,
