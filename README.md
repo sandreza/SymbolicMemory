@@ -7,11 +7,10 @@ Using Transformers to Model Symbol Sequences with Memory
 .
 ├── models/
 │   ├── attention.py     # Attention mechanism implementation
-│   ├── embedding.py     # Token and positional embeddings
 │   ├── mlp.py           # MLP layer implementation
 │   ├── transformer.py   # Main transformer model
 │   ├── autoencoder.py   # Base autoencoder implementation
-│   └── utils.py         #  some 
+│   └── utils.py         # Utility functions for model operations
 ├── training/
 │   ├── trainer.py        # Training infrastructure
 │   ├── loss.py           # Loss functions and metrics
@@ -86,7 +85,7 @@ The scripts will:
 2. **Sparse Autoencoder** (`models/autoencoder.py`):
    - Implements a sparse autoencoder architecture
    - Trains on transformer layer activations
-   - Supports expansion factors for different compression ratios
+   - Supports expansion factors for different inflation ratios
 
 3. **Training Infrastructure** (`training/`):
    - `trainer.py`: Base training infrastructure
@@ -98,19 +97,19 @@ The scripts will:
 
 You can modify the following parameters in the training scripts:
 
-1. In `train_cyclic.py`:
+1. In `examples/cyclic_sequence/train_cyclic.py`:
    - Model dimensions
    - Number of layers
    - Training steps
    - Learning rate
 
-2. In `train_sae.py`:
+2. In `examples/cyclic_sequence/train_sae.py`:
    - Expansion factor
    - Layer to analyze
    - Training steps
    - Batch size
 
-3. In `sae_mechanistic_intervention.py`:
+3. In `examples/cyclic_sequence/sae_mechanistic_intervention.py`:
    - Intervention strength
    - Number of candidate indices
    - Sequence generation length
