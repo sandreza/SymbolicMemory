@@ -3,7 +3,7 @@ name = "symbolic-memory"
 version = "0.1.0"
 description = "A JAX-based implementation of symbolic memory and transformer models"
 authors = [
-    {name = "Andre Souza", email = "andresouza@example.com"},
+    {name = "Andre Souza", email = "andrenogueirasouza@gmail.com"},
 ]
 dependencies = [
     "jax>=0.4.13",
