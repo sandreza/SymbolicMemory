@@ -24,9 +24,9 @@ train_data, val_data = load_lorenz_data()
 print("\nInitializing model...")
 model = Transformer(
     token_dimension=3,  # For tokens 0,1,2
-    n_heads= 9,
-    d_model= 9 * 8,    # n_heads * 16
-    layers=2,
+    n_heads= 4,
+    d_model= 4 * 32,    # n_heads * 16
+    layers=4,
     max_tokens=100
 )
 
