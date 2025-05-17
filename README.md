@@ -43,7 +43,30 @@ First change into the `SymbolicMemory` directory and follow the instructions bel
     ```sh
     uv venv --python 3.11
     source .venv/bin/activate
-    uv sync
+    ```
+
+4. Install the package:
+   - For CPU-only (default, works on all platforms):
+     ```sh
+     uv pip install -e .
+     ```
+   - For CUDA support (Linux only, requires CUDA 12):
+     ```sh
+     uv pip install -e ".[cuda]"
+     ```
+
+## Hardware Support
+
+The project supports both CPU and GPU acceleration:
+
+- **CPU Support**: Works on all platforms (Linux, macOS, Windows)
+- **GPU Support**: Available on Linux systems with CUDA 12
+  - The code will automatically use GPU if available
+  - Falls back to CPU if no GPU is present
+  - You can check available devices with:
+    ```python
+    import jax
+    print(jax.devices())  # Shows available devices (CPU/GPU)
     ```
 
 ## Running the Examples
