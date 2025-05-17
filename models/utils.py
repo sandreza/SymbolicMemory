@@ -10,6 +10,7 @@ import equinox as eqx
 import jax
 import jax.numpy as jnp
 import jax.random as jr
+from tqdm import tqdm
 
 # Type variable for the model class
 ModelT = TypeVar('ModelT', bound=eqx.Module)
@@ -22,7 +23,8 @@ def generate_predictions(
     block_size: int,
     key: jax.random.PRNGKey,
     temperature: float = 1.0,
-    batch_size: int = 1
+    batch_size: int = 1,
+    show_progress: bool = True
 ) -> jax.Array:
     """Generate predictions from a transformer model.
     
@@ -34,6 +36,7 @@ def generate_predictions(
         key: Random key for sampling
         temperature: Sampling temperature (higher = more random)
         batch_size: Number of sequences to generate in parallel
+        show_progress: Whether to show a progress bar during generation
     
     Returns:
         Array of shape (batch_size, max_seq_len + max_new_tokens) containing
@@ -91,6 +94,9 @@ def generate_predictions(
     vocab_size = model.W_E.shape[0]  # Get vocabulary size from embedding matrix
     batched_choice = jax.vmap(jax.random.choice)
     
+    # Create progress bar if requested
+    pbar = tqdm(total=max_new_tokens, desc="Generating", disable=not show_progress)
+    
     # Generate tokens
     for _ in range(max_new_tokens):
         # Crop sequence to block_size
@@ -123,6 +129,12 @@ def generate_predictions(
         
         # Append new tokens
         index_seq = jnp.concatenate([index_seq, next_tokens], axis=1)
+        
+        # Update progress bar
+        pbar.update(1)
+    
+    # Close progress bar
+    pbar.close()
     
     return index_seq
 

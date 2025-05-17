@@ -12,7 +12,7 @@ model = load("lorenz_model/model.mo", Transformer) # load("lorenz_model/st_model
 data, val_data = load_lorenz_data()
 
 istart = 0
-block = 100
+block = 150
 x = jnp.array(data[istart:istart+block])
 len(model.attention(x))
 attention_weights = model.attention(x, layer=0)
@@ -21,6 +21,7 @@ n_layers = len(model.Attentions)
 
 
 for layer in range(n_layers):
+    print(layer)
     for istart in range(0, 30):
         x = jnp.array(data[istart:istart+block])
         attention_weights = model.attention(x, layer=layer)

@@ -26,14 +26,14 @@ model = Transformer(
     token_dimension=3,  # For tokens 0,1,2
     n_heads= 4,
     d_model= 4 * 32,    # n_heads * 16
-    layers=4,
+    layers=6,
     max_tokens=100
 )
 
 # Configure training
 config = TrainingConfig(
     batch_size=16,
-    block_size=100,
+    block_size=150,
     learning_rate=1e-4,
     weight_decay=1e-3,
     num_steps=10001,
