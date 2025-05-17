@@ -20,6 +20,7 @@ __pycache__/
 *.pt*
 *.mo*
 *.hdf5*
+*uv.lock*
 
 
 # C extensions
