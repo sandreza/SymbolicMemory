@@ -48,11 +48,17 @@ First change into the `SymbolicMemory` directory and follow the instructions bel
 4. Install the package:
    - For CPU-only (default, works on all platforms):
      ```sh
-     uv pip install -e .
+     uv sync
      ```
-   - For CUDA support (Linux only, requires CUDA 12):
+   - For CUDA support (Linux only):
      ```sh
-     uv pip install -e ".[cuda]"
+     # Step 1: Sync the package
+     ```sh
+     uv sync 
+     ```
+     # Step 2: Install JAX with CUDA support
+     ```sh
+     uv pip install --upgrade "jax[cuda12_pip]==0.4.30" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
      ```
 
 ## Hardware Support
