@@ -50,15 +50,9 @@ First change into the `SymbolicMemory` directory and follow the instructions bel
      ```sh
      uv sync
      ```
-   - For CUDA support (Linux only):
+   - For CUDA 12.4 support (Linux only):
      ```sh
-     # Step 1: Sync the package
-     ```sh
-     uv sync 
-     ```
-     # Step 2: Install JAX with CUDA support
-     ```sh
-     uv pip install --upgrade "jax[cuda12_pip]==0.4.30" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+     uv sync --extra cuda
      ```
 
 ## Hardware Support
@@ -66,9 +60,7 @@ First change into the `SymbolicMemory` directory and follow the instructions bel
 The project supports both CPU and GPU acceleration:
 
 - **CPU Support**: Works on all platforms (Linux, macOS, Windows)
-- **GPU Support**: Available on Linux systems with CUDA 12
-  - The code will automatically use GPU if available
-  - Falls back to CPU if no GPU is present
+- **GPU Support**: Available on Linux systems with CUDA 12.4
   - You can check available devices with:
     ```python
     import jax
